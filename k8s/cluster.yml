@@ -1,0 +1,34 @@
+apiVersion: gemfire.vmware.com/v1
+kind: GemFireCluster
+metadata:
+  name: demo 
+spec:
+  imagePullSecrets:
+  - name: "image-pull-secret"
+  security:
+    tls: {}
+  image: registry.tanzu.vmware.com/pivotal-gemfire/vmware-gemfire:10.0.1
+  persistentVolumeClaim:
+    deleteOnShutdown: true
+  locators:
+    replicas: 2
+    overrides:
+      gemFireProperties:
+        - name: "use-cluster-configuration"
+          value: "false"
+      
+  servers:
+    replicas: 3
+    overrides:
+      gemFireProperties:
+        - name: "use-cluster-configuration"
+          value: "false"
+        - name: "cache-xml-file"
+          value: "/gemfire/extensions/demo-cache.xml"
+    libraries:
+      - name: sample-cache-xml
+        container:
+          image: docker.io/charliemblack/gemfire-k8s-cache-xml:latest
+          path: "/*.xml"
+    
+
