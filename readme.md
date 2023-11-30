@@ -1,15 +1,17 @@
 # GemFire Cache.xml Configuration with Kubernetes Demo
 
-GemFire allows configuration via a cache.xml file. In scenarios where end users don't have ownership of the solution, managing this file on the file system becomes a challenge. VMware GemFire for Kubernetes addresses this by providing a method to place items on the file system before GemFire starts using containers.
 
-This demo leverages GemFire for Kubernetes' approach to getting libraries onto container file systems. These "libraries" are essentially files, and from an operating system perspective, they are just bits on a disk so lets just use that and not worry that it has the label "libraries".
+In situations where end users lack ownership of the platform, effectively managing files on the file system poses a challenge. VMware GemFire for Kubernetes tackles this issue by offering a method to pre-position items on the file system before GemFire initiates, leveraging containerization. Primarily, these files comprise Java JAR files aimed at extending GemFire's capabilities. However, the scope of these files extends beyond JAR files; for instance, GemFire also accommodates declarative configuration through a `cache.xml` file.
+
+This demo leverages GemFire for Kubernetes approach to getting libraries onto container file systems. These "libraries" are essentially files, and from an operating system perspective, they are just bits on a disk so lets just use that and not worry that it has the label "libraries".  
 
 In a future release, there might be a change in the terminology of "libraries" to be more inclusive, but this would likely wait for a major release to avoid API changes.
 
 ## How It Works
-Begin by reading about the libraries in the GemFire for Kubernetes Custom Resource Definition (CRD) documentation: https://docs.vmware.com/en/VMware-GemFire-for-Kubernetes/2.3/gf-k8s/crd.html
 
-The implementation involves copying files from an image into the GemFire container at a standard location: /gemfire/extensions.
+Lets begin by reading about the libraries in the GemFire for Kubernetes Custom Resource Definition (CRD) documentation: https://docs.vmware.com/en/VMware-GemFire-for-Kubernetes/2.3/gf-k8s/crd.html
+
+The operator implementation copyies the specified files from an image into the GemFire container into a standard location: /gemfire/extensions.
 
 Why use an image? When designing this feature, it was challenging to predict how customers would set up their infrastructure. The decision to use a container image was made because Kubernetes leverages container images so a common delivery mechinism that needed to be in place.
 
@@ -33,7 +35,6 @@ root [ /gemfire/extensions ]# cat demo-cache.xml
     <region name="test" refid="PARTITION_REDUNDANT"/>
 </cache>root [ /gemfire/extensions ]#
 ```
-This repository includes all the necessary commands in a [README](/k8s/readme.md) for installing prerequisites and the GemFire Operator. Additionally, a [cluster.yml](k8s/cluster.yml) file is provided to demonstrate how to use this method to copy the cache.xml file to the container and inform GemFire of its location.
 
 ## Building the Image
 In the image directory, you can find all the required files and commands used to build and push the image to Docker Hub. Your enterprise might use a different container repository, so adjust the image name accordingly.
@@ -46,7 +47,13 @@ Build and push the image with commands like:
 docker build -t charliemblack/gemfire-k8s-cache-xml .
 docker push charliemblack/gemfire-k8s-cache-xml
 ```
-## The secret.yml File
+
+## How to deplicate 
+
+This repository includes all the necessary commands in a [README](/k8s/readme.md) for installing prerequisites for GemFire and the GemFire Operator.  The certificate manager does take some time to install asynchronously, so I put a sleep in the command list which may or may not be enough depending on how much resources your K8s environement has.    The [cluster.yml](k8s/cluster.yml) file is provided to demonstrate the syntax on how to use this method is used to copy the `cache.xml`` file to the container and inform GemFire of its location.
+
+
+### The secret.yml File
 I'm including information about deploying secrets because it might not be widely known. I prefer using base64 encoding from the ~/.docker/config.json for logging into a private repo.
 
 Here's a sample secret.yml (not checked in due to containing sensitive information):
