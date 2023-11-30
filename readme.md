@@ -1,22 +1,21 @@
-# A demo to show GemFire cache.xml with K8s
+# GemFire Cache.xml Configuration with Kubernetes Demo
 
-In GemFire there is a concept of configuring GemFire VIA a xml file.   Since the cache.xml file needs to be present on the file system it proposes a challenge for managed solutions where end users don't own the solution.   Luckly VMware GemFire for Kubernetes is an designed with an open system concepts so there is a method to get items on the file system before GemFire starts.
+GemFire allows configuration via a cache.xml file. In scenarios where end users don't have ownership of the solution, managing this file on the file system becomes a challenge. VMware GemFire for Kubernetes addresses this by providing a method to place items on the file system before GemFire starts using containers.
 
-In this demo we will be taking advantage of GemFire for K8s method for getting libraries onto the containers file system.  Libraries you might be wondering - well it is just a file and from an OS perspective its just bits on a disk.
+This demo leverages GemFire for Kubernetes' approach to getting libraries onto container file systems. These "libraries" are essentially files, and from an operating system perspective, they are just bits on a disk so lets just use that and not worry that it has the label "libraries".
 
-So in some future release I would anticpate a change in the label of libraries to be more encompassing.    That might have to wait for a major since we would be changing the API.
+In a future release, there might be a change in the terminology of "libraries" to be more inclusive, but this would likely wait for a major release to avoid API changes.
 
-# How does this work
+## How It Works
+Begin by reading about the libraries in the GemFire for Kubernetes Custom Resource Definition (CRD) documentation: https://docs.vmware.com/en/VMware-GemFire-for-Kubernetes/2.3/gf-k8s/crd.html
 
-First read about the libraries in the GemFire for K8s CRD documentation: https://docs.vmware.com/en/VMware-GemFire-for-Kubernetes/2.3/gf-k8s/crd.html
+The implementation involves copying files from an image into the GemFire container at a standard location: /gemfire/extensions.
 
-How above was implemented is it just copies the files from an image  into GemFire container in a standard location `/gemfire/extensions`.
+Why use an image? When designing this feature, it was challenging to predict how customers would set up their infrastructure. The decision to use a container image was made because Kubernetes leverages container images so a common delivery mechinism that needed to be in place.
 
-Why an image - seems hard?  When we were designing this feature it was pretty hard forcast how customers were going to have thier infrastructure setup - did they have a blob store, file service, or any method to share data in a common way?  After many interviews we settled on using an container image because k8s uses container images.
+You can observe the final results with the following commands:
 
-You can see how that works here:
-
-```
+```bash
 > kubectl -n gemfiredemo exec -it demo-server-0 -- bash
 Defaulted container "server" out of: server, gemfire-init (init), sample-cache-xml (init)
 root [ /data ]# cd /gemfire/extensions/
@@ -34,34 +33,31 @@ root [ /gemfire/extensions ]# cat demo-cache.xml
     <region name="test" refid="PARTITION_REDUNDANT"/>
 </cache>root [ /gemfire/extensions ]#
 ```
-I have provided all the commands necessary in a [README](k8s/readme.md) to install the prerequists and how to install the GemFire Operator.   I have also included a [cluster.yml](k8s/cluster.yml) file to highlight how to use this method to copy the cache.xml file to the container and tell GemFire where to find it.
+This repository includes all the necessary commands in a [README](/k8s/readme.md) for installing prerequisites and the GemFire Operator. Additionally, a [cluster.yml](k8s/cluster.yml) file is provided to demonstrate how to use this method to copy the cache.xml file to the container and inform GemFire of its location.
 
+## Building the Image
+In the image directory, you can find all the required files and commands used to build and push the image to Docker Hub. Your enterprise might use a different container repository, so adjust the image name accordingly.
 
-# So how do we build an image
+GemFire Cache XML is an example of a GemFire cache.xml.
+The Dockerfile extends busybox as the base image and copies the GemFire Cache XML into the image.
+Build and push the image with commands like:
 
-In the [image](/image) directory we can see all the files that are needed along with the commands that I used to build and push the image to docker hub.   Of course your enterprise might have another container repository and you would want to call the image by your own name.   
-
-The [GemFire Cache XML](/image/demo-cache.xml) is an example of a GemFire cache.xml
-
-For the [Docker file](/image/Dockerfile) I extened busybox as my base image and copied the GemFire Cache XML into the image.
-
-After that it is a simple build image and push (your exact commands may differ):
-
-```
+```bash
 docker build -t charliemblack/gemfire-k8s-cache-xml .
 docker push charliemblack/gemfire-k8s-cache-xml
 ```
+## The secret.yml File
+I'm including information about deploying secrets because it might not be widely known. I prefer using base64 encoding from the ~/.docker/config.json for logging into a private repo.
 
-# The secret.yml file
+Here's a sample secret.yml (not checked in due to containing sensitive information):
 
-I am including this since it might not be widely known how to deploy secrets.   I personally like the method of 
-
-```
+```yaml
 apiVersion: v1
 kind: Secret
 type: kubernetes.io/dockerconfigjson
 metadata:
   name: image-pull-secret 
 data:
-  .dockerconfigjson: [base 64 encoding taken from the ~/.docker/config.json ]
+  .dockerconfigjson: [base64 encoding taken from the ~/.docker/config.json]
 ```
+Learn more about this feature in the Kubernetes documentation: [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
