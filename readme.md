@@ -48,7 +48,7 @@ docker build -t charliemblack/gemfire-k8s-cache-xml .
 docker push charliemblack/gemfire-k8s-cache-xml
 ```
 
-## How to deplicate 
+## How to duplicate 
 
 This repository includes all the necessary commands in a [README](/k8s/readme.md) for installing prerequisites for GemFire and the GemFire Operator.  The certificate manager does take some time to install asynchronously, so I put a sleep in the command list which may or may not be enough depending on how much resources your K8s environement has.    The [cluster.yml](k8s/cluster.yml) file is provided to demonstrate the syntax on how to use this method is used to copy the `cache.xml`` file to the container and inform GemFire of its location.
 
